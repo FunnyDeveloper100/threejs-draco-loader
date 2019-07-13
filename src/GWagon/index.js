@@ -1,10 +1,8 @@
 import React, {Component} from 'react';
-import carInfo from "./car.obj";
-var THREE = require('three');
-var OBJLoader = require('three-obj-loader');
-OBJLoader(THREE);
+import wagon from './gwagon.drc';
+import { DRACOLoader } from 'three-full'
+const THREE = require('three-full')
 const OrbitControls = require('three-orbitcontrols');
-
 
 export default class GWagon extends Component {
 
@@ -63,22 +61,39 @@ export default class GWagon extends Component {
         }
 
         var self = this;
-        OBJLoader(THREE)
-        var loader = new THREE.OBJLoader();
-        loader.load(carInfo, function(object) {
-            object.castShadow = false;
-            object.position.z += 1.3;
-            object.traverse(function(child) {
-                if (child instanceof THREE.Mesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                    child.material.color.setHex(0x505050);
-                }
-            })
-            var scaleVal = 0.1;
-            object.scale.set(scaleVal, scaleVal, scaleVal);
-            self.totalGroup.add(object);
-        });
+        DRACOLoader.setDecoderPath('js/draco/');
+        DRACOLoader.setDecoderConfig({type: 'js'});
+        var dracloader = new DRACOLoader();
+
+        dracloader.load(
+            wagon, 
+            function(object) {
+                object.computeVertexNormals();
+				var material = new THREE.MeshStandardMaterial( { color: 0x505050 } );
+				var mesh = new THREE.Mesh( object, material );
+				mesh.castShadow = false;
+                mesh.posZ += 1.3;
+                mesh.traverse(function(child) {
+                    if (child instanceof THREE.Mesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        child.material.color.setHex(0x505050);
+                    }
+                })
+                var scaleVal = 0.1;
+                mesh.scale.set(scaleVal, scaleVal, scaleVal);
+				mesh.receiveShadow = true;
+				DRACOLoader.releaseDecoderModule();
+                self.totalGroup.add(mesh);
+            },
+            function ( xhr ) {
+		        console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+	        },
+            // called when loading has errors
+	        function ( error ) {
+		        console.log( 'An error happened' );
+	        }
+        );
 
         this.animate();
 
@@ -94,12 +109,11 @@ export default class GWagon extends Component {
         this.totalGroup.rotation.y += this.rotateSpeed;
     }
 
-  render() {
-
-    return (
-        <div className="gwagon-wrapper" ref={ (divElement) => this.divElement = divElement}>
-            
-        </div>
-    );
+    render() {
+        return (
+            <div className="gwagon-wrapper" ref={ (divElement) => this.divElement = divElement}>
+                
+            </div>
+        );
     }
 }
